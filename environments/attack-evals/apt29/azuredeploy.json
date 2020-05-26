@@ -19,6 +19,18 @@
                 "description": "The Evaluations emulation is split into two distinct scenarios (Days 1 and 2) to reflect these differing operational flows and toolkits used by APT29."
             }
         },
+        "setDataPipeline": {
+            "type": "string",
+            "defaultValue": "Cylerian",
+            "allowedValues": [
+                "",
+                "WEF-LOGSTASH-EVENTHUB",
+                "Cylerian"
+            ],
+            "metadata": {
+                "description": "The specific data pipeline that you would like to use to aggregate and analyze security events"
+            }
+        },
         "useCalderaDIY": {
             "type": "bool",
             "defaultValue": false,
