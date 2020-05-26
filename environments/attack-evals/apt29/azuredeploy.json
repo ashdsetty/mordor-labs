@@ -19,18 +19,6 @@
                 "description": "The Evaluations emulation is split into two distinct scenarios (Days 1 and 2) to reflect these differing operational flows and toolkits used by APT29."
             }
         },
-        "setDataPipeline": {
-            "type": "string",
-            "defaultValue": "WEF-LOGSTASH-EVENTHUB",
-            "allowedValues": [
-                "",
-                "WEF-LOGSTASH-EVENTHUB",
-                "AZURESENTINEL"
-            ],
-            "metadata": {
-                "description": "The specific data pipeline that you would like to use to aggregate and analyze security events"
-            }
-        },
         "useCalderaDIY": {
             "type": "bool",
             "defaultValue": false,
@@ -77,16 +65,16 @@
         },
         "windowsDesktopVersion": {
             "type": "string",
-            "defaultValue": "18362.720.2003120536",
+            "defaultValue": "18362.778.2004101604",
             "allowedValues": [
-                "18362.720.2003120536"
+                "18362.778.2004101604"
             ]
         },
         "windowsDesktopVmSize": {
             "type": "string",
-            "defaultValue": "Standard_B2s",
+            "defaultValue": "Standard_B1s",
             "allowedValues": [
-                "Standard_B2s",
+                "Standard_B1s",
                 "Standard_A3"
             ],
             "metadata": {
@@ -112,9 +100,9 @@
         },
         "windowsServerVmSize": {
             "type": "string",
-            "defaultValue": "Standard_B2s",
+            "defaultValue": "Standard_B1s",
             "allowedValues": [
-                "Standard_B2s",
+                "Standard_B1s",
                 "Standard_A3"
             ],
             "metadata": {
@@ -137,9 +125,9 @@
         },
         "linuxVmSize": {
             "type": "string",
-            "defaultValue": "Standard_B2s",
+            "defaultValue": "Standard_B1s",
             "allowedValues": [
-                "Standard_B2s",
+                "Standard_B1s",
                 "Standard_A3"
             ],
             "metadata": {
@@ -219,21 +207,16 @@
         "subnetRef4": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkNameB'), variables('subnetName4'))]",
 
         "artifactsBlacksmithLocation": "https://raw.githubusercontent.com/hunters-forge/Blacksmith/master/",
+        "artifactsCylerianLocation": "https://raw.githubusercontent.com/ashdsetty/Cylerian/master/",
 
         "customScriptExTemplateUri": "[uri(parameters('_artifactsLocation'), concat('environments/attack-evals/apt29/nestedtemplates/customScriptExtension.json', parameters('_artifactsLocationSasToken')))]",
         "prepareBoxScript": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/misc/Prepare-Box.ps1')]",
         "enableWinAuditCategories": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/auditing/Enable-WinAuditCategories.ps1')]",
         "enablePowerShellLoggingScript": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/auditing/Enable-PowerShell-Logging.ps1')]",
-        "installAgentScript": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/endpoint-software/Install-Endpoint-Agent.ps1')]",
+        "installAgentScript": "[uri(variables('artifactsCylerianLocation'), 'environments/attack-evals/apt29/scripts/Install-Endpoint-Agent.ps1')]",
         "downloadSACLScript": "https://raw.githubusercontent.com/hunters-forge/Set-AuditRule/master/Set-AuditRule.ps1",
         "setSACLScript": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/auditing/Set-SACLs.ps1')]",
         "setIPAddressScript": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/misc/Set-StaticIP.ps1')]", 
-        
-        "logstashSetupScript": "[uri(parameters('_artifactsLocation'), concat('environments/attack-evals/apt29/scripts/Set-Logstash.sh', parameters('_artifactsLocationSasToken')))]",
-        "installLogShipperScript": "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/endpoint-software/Install-Log-Shipper.ps1')]",
-
-        "nxlogConfig": "[uri(variables('artifactsBlacksmithLocation'), 'resources/configs/nxlog/nxlogWEC.conf')]",
-        "wefSubscriptionsUrl": "[uri(variables('artifactsBlacksmithLocation'), 'resources/configs/wef/subscriptions.zip')]",
 
         "endpointsDefault": [
             {
@@ -295,6 +278,18 @@
                 "offer": "UbuntuServer",
                 "sku": "[parameters('ubuntuSKU')]",
                 "version": "latest"
+            },
+            {
+                "tag": "r2server",
+                "vmName": "R2SERVER",
+                "os": "windows",
+                "subnetref": "[variables('subnetRef1')]",
+                "ipAddress": "10.0.0.5",
+                "vmSize": "[parameters('windowsServerVmSize')]",
+                "publisher": "MicrosoftWindowsServer",
+                "offer": "WindowsServer",
+                "sku": "2008-R2-SP1",
+                "version": "7601.24554.2005081852"
             }
         ],
         "endpointRedirector": [
@@ -311,34 +306,6 @@
                 "version": "latest"
             }
         ],
-
-        "endpointsLogging": [
-            {
-                "tag": "logCollector",
-                "vmName": "WEC",
-                "os": "windows",
-                "subnetref": "[variables('subnetRef2')]",
-                "ipAddress": "10.0.1.10",
-                "vmSize": "[parameters('windowsDesktopVmSize')]",
-                "publisher": "MicrosoftWindowsDesktop",
-                "offer": "Windows-10",
-                "sku": "[parameters('windowsDesktopSKU')]",
-                "version": "[parameters('windowsDesktopVersion')]"
-            },
-            {
-                "tag": "logShipper",
-                "vmName": "LOGSTASH",
-                "os": "linux",
-                "subnetref": "[variables('subnetRef2')]",
-                "ipAddress": "10.0.1.11",
-                "vmSize": "[parameters('linuxVmSize')]",
-                "publisher": "Canonical",
-                "offer": "UbuntuServer",
-                "sku": "[parameters('ubuntuSKU')]",
-                "version": "latest"
-            }
-        ],
-
         "endpointsScenario": "[if(and(equals(parameters('pickScenario'), 'Day1'), not(parameters('useCalderaDIY'))), concat(variables('endpointsDefault'), variables('endpointRedirector')), variables('endpointsDefault'))]",
         "endpoints": "[if(contains(parameters('setDataPipeline'), 'LOGSTASH'), concat(variables('endpointsScenario'), variables('endpointsLogging')),variables('endpointsScenario'))]",
 
@@ -372,7 +339,7 @@
             "properties": {}
         },
         {
-            "condition": "[contains(parameters('setDataPipeline'), 'EVENTHUB')]",
+            "condition": "[contains(parameters('setDataPipeline'), 'Cylerian')]",
             "name": "deployEventHub",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2019-10-01",
@@ -388,45 +355,6 @@
                     },
                     "eventHubSku": {
                         "value": "Standard"
-                    }
-                }
-            }
-        },
-        {
-            "condition": "[equals(parameters('setDataPipeline'), 'AZURESENTINEL')]",
-            "name": "deployAzureSentinel2Go",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2019-10-01",
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[uri('https://raw.githubusercontent.com/OTRF/','Azure-Sentinel2Go/master/azuredeploy.json')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "workspaceName": {
-                        "value": "APT29"
-                    },
-                    "enableDataConnectorsKind": {
-                        "value": ["SecurityInsightsSecurityEventCollectionConfiguration"]
-                    }, 
-                    "setSecurityCollectionTier": {
-                        "value": "All"
-                    },
-                    "enableWinEventProviders": {
-                        "value": [
-                            "System",
-                            "Microsoft-Windows-Sysmon/Operational",
-                            "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational",
-                            "Microsoft-Windows-Bits-Client/Operational",
-                            "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
-                            "Directory Service",
-                            "Microsoft-Windows-DNS-Client/Operational",
-                            "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall",
-                            "Windows PowerShell",
-                            "Microsoft-Windows-PowerShell/Operational",
-                            "Microsoft-Windows-WMI-Activity/Operational"
-                        ]
                     }
                 }
             }
@@ -689,7 +617,7 @@
                         "typeHandlerVersion": "1.3",
                         "autoUpgradeMinorVersion": true,
                         "settings": {
-                            "AntimalwareEnabled": "true",
+                            "AntimalwareEnabled": "false",
                             "Exclusions": {
                                 "Extensions": ".bat;.exe;.dll;.ps1;.sct;.vbs;.hta;.py;.tmp;.csproj;.scr",
                                 "Paths": "C:\\",
@@ -704,22 +632,6 @@
                             }
                         },
                         "protectedSettings": null
-                    }
-                },
-                {
-                    "condition": "[equals(variables('endpoints')[copyIndex()].os, 'windows')]",
-                    "name": "Microsoft.Azure.NetworkWatcher",
-                    "type": "extensions",
-                    "apiVersion": "2019-12-01",
-                    "location": "[resourceGroup().location]",
-                    "dependsOn": [
-                        "[concat('Microsoft.Compute/virtualMachines/', variables('endpoints')[copyIndex()].vmName)]"
-                    ],
-                    "properties": {
-                        "publisher": "Microsoft.Azure.NetworkWatcher",
-                        "type": "NetworkWatcherAgentWindows",
-                        "typeHandlerVersion": "1.4",
-                        "autoUpgradeMinorVersion": true
                     }
                 }
             ]
@@ -899,7 +811,7 @@
                     "commandToExecute": "[if(parameters('useCalderaDIY'),  concat('bash Set-Adversary.sh -s', ' ', parameters('pickScenario'), ' ', '-p'), concat('bash Set-Adversary.sh -s', ' ', parameters('pickScenario')))]",
                     "fileUris": [
                         "[uri(parameters('_artifactsLocation'), 'environments/attack-evals/apt29/scripts/Set-Adversary.sh')]",
-                        "[uri(parameters('_artifactsLocation'), 'environments/attack-evals/apt29/scripts/Install-Docker.sh')]",
+                        "[uri(parameters('_artifactsCylerianLocation'), 'environments/attack-evals/apt29/scripts/Install-Docker.sh')]",
                         "[uri(parameters('_artifactsLocation'), if(parameters('useCalderaDIY'), 'environments/attack-evals/apt29/caldera/conf/4fb34bde-b06d-445a-a146-8e35f79ce546.yml', concat('environments/attack-evals/apt29/payloads/', if(equals(parameters('pickScenario'), 'Day1'), 'day1', 'day2'), '/attack-platform.zip')))]"
                     ]
                 }
@@ -924,31 +836,6 @@
                     "commandToExecute": "[concat('bash Set-Socat.sh -i', ' ', variables('endpoints')[4].ipAddress)]",
                     "fileUris": [
                         "https://raw.githubusercontent.com/OTRF/mordor-labs/master/environments/attack-evals/apt29/scripts/Set-Socat.sh"
-                    ]
-                }
-            }
-        },
-        {
-            "condition": "[contains(parameters('setDataPipeline'), 'LOGSTASH-EVENTHUB')]",
-            "name": "[concat(variables('endpointsLogging')[1].vmName, '/SetUpLogstash')]",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "apiVersion": "2019-12-01",
-            "location": "[parameters('location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Compute/virtualMachines/', variables('endpointsLogging')[1].vmName)]",
-                "deployEventHub"
-            ],
-            "properties": {
-                "publisher": "Microsoft.Azure.Extensions",
-                "type": "CustomScript",
-                "typeHandlerVersion": "2.1",
-                "autoUpgradeMinorVersion": true,
-                "settings": {},
-                "protectedSettings": {
-                    "commandToExecute": "[if(contains(parameters('setDataPipeline'), 'LOGSTASH'), concat('bash Set-Logstash.sh -n', ' ', reference('deployEventHub').outputs.EventHubNamespace.value , ' ', '-c', ' ', '\"', reference('deployEventHub').outputs.NamespaceConnectionString.value, '\"', ' ', '-e', ' ', reference('deployEventHub').outputs.EventHubName.value, ' ', '-u', ' ', parameters('adminUsername')), 'Resource not deployed')]",
-                    "fileUris": [
-                        "[variables('logstashSetupScript')]",
-                        "[uri(parameters('_artifactsLocation'), concat('environments/attack-evals/apt29/scripts/Install-Docker.sh', parameters('_artifactsLocationSasToken')))]"
                     ]
                 }
             }
@@ -1057,7 +944,7 @@
                     },
                     "fileUris": {
                         "value": [
-                            "https://raw.githubusercontent.com/OTRF/mordor-labs/master/environments/attack-evals/apt29/scripts/Set-AD.ps1",
+                            "https://raw.githubusercontent.com/ashdsetty/Cylerian/master/environments/attack-evals/apt29/scripts/Set-AD.ps1",
                             "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/active-directory/Set-OUs.ps1')]",
                             "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/active-directory/Add-DomainUsers.ps1')]",
                             "[uri(variables('artifactsBlacksmithLocation'), 'resources/scripts/powershell/auditing/Set-AuditSAMRemoteCalls.ps1')]"
@@ -1128,42 +1015,6 @@
                     "fileUris": {
                         "value": [
                             "[uri(variables('artifactsBlacksmithLocation'), concat('resources/scripts/powershell/auditing/Configure-WEC.ps1', parameters('_artifactsLocationSasToken')))]"
-                        ]
-                    },
-                    "vmName": {
-                        "value": "[variables('endpointsLogging')[0].vmName]"
-                    },
-                    "location": {
-                        "value": "[parameters('location')]"
-                    }
-                }
-            }
-        },
-        {
-            "condition": "[contains(parameters('setDataPipeline'), 'WEF-LOGSTASH')]",
-            "name": "SetUpWECLogstash",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2019-10-01",
-            "dependsOn": [
-                "ConfigureWEC",
-                "[resourceId('Microsoft.Compute/virtualMachines/extensions', variables('endpointsLogging')[1].vmName, 'SetUpLogstash')]"
-            ],
-            "properties": {
-                "mode": "Incremental",
-                "templateLink": {
-                    "uri": "[variables('customScriptExTemplateUri')]",
-                    "contentVersion": "1.0.0.0"
-                },
-                "parameters": {
-                    "extensionName": {
-                        "value": "SetUpWEC"
-                    },
-                    "commandToExecute": {
-                        "value": "[concat('powershell -ExecutionPolicy Unrestricted -File ./Install-Log-Shipper.ps1', ' ', '-DestinationIP', ' ', variables('endpointsLogging')[1].ipAddress, ' ', '-ShipperAgent Nxlog', ' ', '-ConfigUrl', ' ', variables('nxlogConfig'))]"
-                    },
-                    "fileUris": {
-                        "value": [
-                            "[variables('installLogShipperScript')]"
                         ]
                     },
                     "vmName": {
